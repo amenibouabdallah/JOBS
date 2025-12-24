@@ -1,0 +1,513 @@
+// Jobs26 - Event Management Platform
+// Prisma Schema for complete event management system
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  PARTICIPANT
+  JE
+}
+
+enum SupportType {
+  PDF
+  VIDEO
+  SLIDES
+  DOCUMENT
+  LINK
+}
+
+enum SalleType {
+  CONFERENCE_ROOM
+  MEETING_ROOM
+  WORKSHOP_ROOM
+  AMPHITHEATER
+  AUDITORIUM
+  PANEL_ROOM
+  OTHER
+}
+
+enum ParticipantRole {
+  MEMBRE_JUNIOR
+  MEMBRE_SENIOR
+  RESPONSABLE
+  QUARTET
+  CDM
+  ALUMNUS
+  ALUMNA
+  BUREAU_NATIONAL
+  INTERNATIONAL_GUEST
+  SPEAKER
+  OC
+}
+
+enum PaymentSheetStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReclamationStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ReclamationPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum UserStatus {
+  CREATED   // Account created, form not finished
+  VERIFIED  // Finished registering waiting for approval
+  APPROVED  // Approved by his JE or admin 
+}
+
+enum CorrelationRule {
+  REQUIRES      // When source activity picked, automatically pick target activity
+  EXCLUDES      // When source activity picked, automatically exclude target activity
+  ALL           // Source activity is required for everyone and the target activity should be itself
+}
+
+enum CertificateType {
+  PARTICIPATION
+  COMPLETION
+  ACHIEVEMENT
+  SPEAKER
+}
+
+enum Day {
+  J_1
+  J_2
+}
+
+// Base User Account (inherited fields from jobs25)
+model User {
+  id          Int           @id @default(autoincrement())
+  email       String        @unique
+  password    String?       // Nullable for OAuth users
+  role        UserRole
+  img         String?
+  status      UserStatus @default(CREATED)
+  agreedTerms Boolean       @default(false)
+  
+  // OAuth fields
+  googleId    String?       @unique
+  isOAuth     Boolean       @default(false)
+  
+  // Password reset
+  resetToken              String?   @unique
+  resetTokenExpiry        DateTime?
+  refreshToken            String?
+  
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  participants Participant[]
+  jes         JE[]
+  admins      Admin[]
+
+  @@map("users")
+}
+
+// Event Participants
+model Participant {
+  id            Int                 @id @default(autoincrement())
+  role          ParticipantRole?
+  privacy       Int                 @default(0)
+  firstName     String?
+  lastName      String?
+  sexe          String?
+  phone         String?
+  birthdate     DateTime?
+  linkedinLink  String?
+  cinPassport   String?
+  about         String?
+  payDate       DateTime?     // Full payment date (deprecated - use firstPayDate/fullPayDate)
+  firstPayDate  DateTime?     // Date of first payment
+  placeName     String?
+  
+  // New fields for status management
+  approvedAt    DateTime?
+  approvedBy    Int?                // JE admin who approved
+  
+  // Relations
+  userId     Int
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jeId          Int?
+  je            JE? @relation(fields: [jeId], references: [id])
+  
+  orders        Order[]
+  certificates  Certificate[]
+  Program       Program[]
+  reclamations  Reclamation[]
+  attendances   Attendance[]
+
+  @@map("participants")
+}
+
+// Junior-Entreprises
+model JE {
+  id          Int      @id @default(autoincrement())
+  name        String
+  checkIn     DateTime?
+  checkedOut  DateTime?
+  phone       String?
+  code        String   @unique // Used for participant validation
+  
+  // Zone management
+  reservedZoneId Int?
+  reservedZone   Zone? @relation(fields: [reservedZoneId], references: [id])
+  
+  // Relations
+  userId   Int
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participants Participant[]
+  paymentSheets PaymentSheet[]
+  reclamations Reclamation[]
+
+  @@map("jes")
+}
+
+// Admin users
+model Admin {
+  id          Int      @id @default(autoincrement())
+  permissions String[] // Specific admin permissions
+  
+  // Relations
+  userId   Int
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("admins")
+}
+
+// Support Materials for Activities/Formations
+model Support {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+  type        SupportType
+  filePath    String?     // File path for documents
+  fileUrl     String?     // External URL for links
+  uploaderId  Int?        // Admin who uploaded
+  isPublic    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  activities  Activity[]
+  
+  @@map("supports")
+}
+
+model Zone{
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  isAvailable Boolean  @default(true)
+  
+  // Relations
+  jes         JE[]
+  salleId     Int?
+  salle       Salle? @relation(fields: [salleId], references: [id])
+  
+  @@map("zones")
+}
+
+// Main Event
+model Jobs {
+  id                   Int      @id @default(autoincrement())
+  title                String   @default("Jobs 2026")
+  description          String?
+  startDate            DateTime
+  subscriptionDeadline DateTime?
+  payStart             DateTime
+  payDeadline          DateTime
+  firstPayDeadline     DateTime
+  PayAmount            Int?
+  firstPayAmount       Int?
+  secondPayAmount      Int?
+  nbrParticipants      Int      @default(0)
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  hotelId     Int?
+  hotel       Hotel? @relation(fields: [hotelId], references: [id])
+  orders      Order[]
+
+  @@map("jobs")
+}
+
+// Accommodation
+model Hotel {
+  id      Int    @id @default(autoincrement())
+  name    String
+  logo    String?
+  address String
+
+  // Relations
+  jobs    Jobs[]
+  rooms   Room[]
+
+  @@map("hotels")
+}
+
+model Room {
+  id       Int      @id @default(autoincrement())
+  number   String
+  capacity Int
+
+  // Relations
+  hotelId  Int
+  hotel    Hotel @relation(fields: [hotelId], references: [id])
+
+  @@map("rooms")
+}
+
+// Activities with time slots and correlations
+model Activity {
+  id              Int      @id @default(autoincrement())
+  name            String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  capacity        Int      @default(0)
+  panelists       String[]
+  isRequired      Boolean  @default(false) // Required for all participants
+  requiredForRoles ParticipantRole[] // Additionally required for these roles
+  
+  // Relations
+  activityTypeId  Int
+  activityType    ActivityType @relation(fields: [activityTypeId], references: [id])
+  salleId         Int
+  salle           Salle @relation(fields: [salleId], references: [id])
+  supportId       Int?
+  support         Support? @relation(fields: [supportId], references: [id])
+  
+  programs        Program[]
+  correlationsAsSource ActivityCorrelation[] @relation("ActivityCorrelation_source")
+  correlationsAsTarget ActivityCorrelation[] @relation("ActivityCorrelation_target")
+  attendances     Attendance[]
+
+  @@map("activities")
+}
+
+model ActivityType {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  earliestTime DateTime?
+  latestTime   DateTime?
+  day          Day
+  
+  // Relations
+  activities  Activity[]
+  
+  @@map("activity_types")
+}
+
+model Salle {
+  id          Int        @id @default(autoincrement())
+  description String?
+  name        String
+  capacity    Int
+  type        SalleType  @default(OTHER)
+  
+  // Relations
+  activities Activity[]
+  zones      Zone[]
+  
+  @@map("salles")
+}
+
+// Activity enrollments by participants
+model Program {
+  id            Int @id @default(autoincrement())
+  enrolledAt    DateTime @default(now())
+  
+  // Relations
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  activityId    Int
+  activity      Activity @relation(fields: [activityId], references: [id])
+  
+  @@unique([participantId, activityId])
+  @@map("activity_enrollments")
+}
+
+// Activity correlations and restrictions
+model ActivityCorrelation {
+  id               Int @id @default(autoincrement())
+  rule             CorrelationRule
+  description      String?
+  autoPickForRoles ParticipantRole[] // When source is selected, auto-pick target for these participant roles
+  role             ParticipantRole?  // New field: if set, the correlation only applies to participants with this role
+
+  // Directional relations
+  sourceActivityId Int
+  sourceActivity   Activity @relation("ActivityCorrelation_source", fields: [sourceActivityId], references: [id])
+  targetActivityId Int?
+  targetActivity   Activity? @relation("ActivityCorrelation_target", fields: [targetActivityId], references: [id])
+
+  @@unique([sourceActivityId, targetActivityId, rule, role])
+  @@map("activity_correlations")
+}
+
+// Directional activity dependencies (admin-defined)
+// Example: sourceActivity REQUIRES targetActivity, or EXCLUDES, or RECOMMENDS
+// Removed ActivityDependency in favor of directional ActivityCorrelation
+
+// Orders & Bookings
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderNumber     String      @unique // Our internal order number (e.g., 20251103T143808Z6915)
+  clictopayOrderId String?    @unique // ClicToPay's UUID (e.g., bb946252-d5cd-413d-b0fa-2a52e6c378e6)
+  status          String 
+  totalAmount     Float
+  paymentMethod   String?
+  notes           String?
+  
+  // ClicToPay specific fields
+  approvalCode    String?
+  errorMessage    String?
+  errorCode       String?
+  clictopayData   Json?       // Store raw ClicToPay response
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  jobsId        Int
+  jobs          Jobs @relation(fields: [jobsId], references: [id])
+
+  payInvoices   PayInvoice[]
+  payReceipts   PayReceipt[]
+
+  @@map("orders")
+}
+
+// Payment Management
+model PayInvoice {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  description String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  orderId     Int
+  order       Order @relation(fields: [orderId], references: [id])
+  
+  @@map("invoices")
+}
+
+model PayReceipt {
+  id            Int      @id @default(autoincrement())
+  amount        Float
+  paymentMethod String
+  transactionId String?
+  paidAt        DateTime @default(now())
+  
+  // Relations
+  orderId       Int
+  order         Order @relation(fields: [orderId], references: [id])
+  
+  @@map("receipts")
+}
+
+// Payment sheets uploaded by JEs
+model PaymentSheet {
+  id            Int @id @default(autoincrement())
+  title         String // Title/description of the payment sheet
+  filePath      String? // Path to the uploaded Excel file
+  participantIds Int[] // Array of participant IDs that paid
+  uploadedAt    DateTime @default(now())
+  status        PaymentSheetStatus @default(PENDING)
+  validatedAt   DateTime?
+  validatedBy   Int? // Admin who validated
+  notes         String? // JE notes
+  adminNotes    String? // Admin notes during review
+  
+  // Relations
+  jeId          Int
+  je            JE @relation(fields: [jeId], references: [id])
+  
+  @@map("payment_sheets")
+}
+
+// Certificates
+model Certificate {
+  id            Int @id @default(autoincrement())
+  type          CertificateType @default(PARTICIPATION)
+  issuedAt      DateTime @default(now())
+  certificateUrl String?
+  
+  // Relations
+  participantId Int
+  participant   Participant @relation(fields: [participantId], references: [id])
+  
+  @@map("certificates")
+}
+
+// Support system
+model Reclamation {
+  id            Int @id @default(autoincrement())
+  subject       String
+  description   String
+  status        ReclamationStatus @default(OPEN)
+  priority      ReclamationPriority @default(MEDIUM)
+  response      String?
+  respondedAt   DateTime?
+  respondedBy   Int? // Admin who responded
+  createdAt     DateTime @default(now())
+  
+  // Relations - can be from participant or JE
+  participantId Int?
+  participant   Participant? @relation(fields: [participantId], references: [id])
+  jeId          Int?
+  je            JE? @relation(fields: [jeId], references: [id])
+  
+  @@map("reclamations")
+}
+
+// System Settings (for admin configuration)
+model SystemSetting {
+  id          Int @id @default(autoincrement())
+  key         String @unique
+  value       String
+  description String?
+  updatedAt   DateTime @updatedAt
+  
+  @@map("system_settings")
+}
+
+model Attendance {
+  id            Int       @id @default(autoincrement())
+  participantId Int
+  activityId    Int
+  attended      Boolean   @default(false)
+  checkInTime   DateTime?
+
+  participant   Participant @relation(fields: [participantId], references: [id])
+  activity      Activity    @relation(fields: [activityId], references: [id])
+
+  @@unique([participantId, activityId])
+  @@map("attendances")
+}
