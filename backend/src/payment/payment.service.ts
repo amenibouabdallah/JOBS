@@ -62,6 +62,9 @@ export class PaymentService {
       payStart: jobs.payStart,
       payDeadline: jobs.payDeadline,
       firstPayDeadline: jobs.firstPayDeadline,
+      fullPayQrCode: jobs.fullPayQrCode,
+      firstPayQrCode: jobs.firstPayQrCode,
+      secondPayQrCode: jobs.secondPayQrCode,
     };
   }
 

@@ -98,7 +98,7 @@ export function Sidebar({ menuItems, userRole, variant = 'desktop' }: SidebarPro
           </Link>
           <div className="flex items-center">
             {user?.img ? (
-              <img 
+              <Image 
                 src={getImageUrl(user.img) || ''}
                 alt="Profile"
                 className="w-8 h-8 rounded-full object-cover"

@@ -40,6 +40,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { title: 'Salles', href: '/admin/salles', icon: 'building' },
     { title: 'Activity Types', href: '/admin/activity-types', icon: 'list' },
     { title: 'Zones', href: '/admin/zones', icon: 'map' },
+    { title: 'Payments', href: '/admin/payment', icon: 'credit-card' },
     { title: 'Reports', href: '/admin/reports', icon: 'chart' },
     { title: 'Profile', href: '/admin/profile', icon: 'user' },
   ];

@@ -5,6 +5,7 @@ import { jobsService } from '@/lib/services/jobs.service';
 import { Jobs } from '@/types/jobs.types';
 import { CreateJobForm } from '@/components/admin/jobs/CreateJobForm';
 import { JobsList } from '@/components/admin/jobs/JobsList';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
 export function JobsManagement() {
@@ -34,25 +35,44 @@ export function JobsManagement() {
 
   const handleSubmit = async () => {
     try {
+      // Validate required fields
+      if (!form.title || !form.startDate || !form.payStart || !form.payDeadline || !form.PayAmount) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+
       if (isEditing) {
         const updated = await jobsService.update(form.id!, form);
         setJobs(jobs.map(j => j.id === updated.id ? updated : j));
-        toast.success('Jobs updated');
+        toast.success('Job updated successfully');
       } else {
         const created = await jobsService.create(form);
         setJobs([created, ...jobs]);
-        toast.success('Jobs created');
+        toast.success('Job created successfully');
       }
       setForm({});
       setIsEditing(false);
-    } catch {
-      toast.error('Operation failed');
+    } catch (error: any) {
+      console.error('Operation failed:', error);
+      toast.error(error?.response?.data?.message || 'Operation failed');
     }
+  };
+
+  const handleCancel = () => {
+    setForm({});
+    setIsEditing(false);
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Jobs Management</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Jobs Management</h2>
+        {isEditing && (
+          <Button variant="outline" onClick={handleCancel}>
+            Cancel Edit
+          </Button>
+        )}
+      </div>
       <CreateJobForm form={form} setForm={setForm} onSubmit={handleSubmit} isEditing={isEditing} />
       <JobsList jobs={jobs} onEdit={handleEdit} onDelete={handleDelete} />
     </div>

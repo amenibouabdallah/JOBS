@@ -35,8 +35,9 @@ export default function PaymentPage() {
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [status, setStatus] = useState<PaymentStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentLoading, setPaymentLoading] = useState(false);
   const router = useRouter();
+
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3020';
 
   useEffect(() => {
     fetchPaymentData();
@@ -58,19 +59,10 @@ export default function PaymentPage() {
     }
   };
 
-  const initiatePayment = async (paymentType: 'FIRST' | 'FULL', amount: number) => {
-    setPaymentLoading(true);
-    
-    try {
-      const data = await paymentService.initiatePayment(paymentType, amount);
-      
-      // Redirect to ClicToPay payment page
-      window.location.href = data.formUrl;
-    } catch (error: any) {
-      toast.error(error.message || 'Payment initiation failed');
-    } finally {
-      setPaymentLoading(false);
-    }
+  const getQrCodeUrl = (qrCodePath?: string) => {
+    if (!qrCodePath) return undefined;
+    if (qrCodePath.startsWith('http')) return qrCodePath;
+    return `${BACKEND_URL}${qrCodePath}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -240,14 +232,19 @@ export default function PaymentPage() {
                     {config.firstPayQrCode && (
                       <div className="flex justify-center">
                         <img 
-                          src={config.firstPayQrCode} 
+                          src={getQrCodeUrl(config.firstPayQrCode)} 
                           alt="First Payment QR Code" 
                           className="w-48 h-48 object-contain border-2 border-blue-200 rounded-lg p-2"
                         />
                       </div>
                     )}
-                    <div className="text-center text-sm text-gray-600">
-                      Scan the QR code to complete first payment
+                    <div className="text-center text-sm text-gray-600 space-y-2">
+                      <p className="font-medium">How to pay:</p>
+                      <ol className="text-left space-y-1 max-w-xs mx-auto">
+                        <li>1. Scan the QR code with your banking app</li>
+                        <li>2. Complete the payment</li>
+                        <li>3. A confirmation email will be sent</li>
+                      </ol>
                     </div>
                     {!status.canPayFirst && status.hasFirstPayment && (
                       <p className="text-sm text-green-600 text-center">
@@ -282,14 +279,25 @@ export default function PaymentPage() {
                     {config.fullPayQrCode && !status.hasFirstPayment && (
                       <div className="flex justify-center">
                         <img 
-                          src={config.fullPayQrCode} 
+                          src={getQrCodeUrl(config.fullPayQrCode)} 
                           alt="Full Payment QR Code" 
                           className="w-48 h-48 object-contain border-2 border-green-200 rounded-lg p-2"
                         />
                       </div>
                     )}
-                    <div className="text-center text-sm text-gray-600">
-                      {!status.hasFirstPayment ? 'Scan the QR code to complete full payment' : 'Full payment not available after partial payment'}
+                    <div className="text-center text-sm text-gray-600 space-y-2">
+                      {!status.hasFirstPayment ? (
+                        <>
+                          <p className="font-medium">How to pay:</p>
+                          <ol className="text-left space-y-1 max-w-xs mx-auto">
+                            <li>1. Scan the QR code with your banking app</li>
+                            <li>2. Complete the payment</li>
+                            <li>3. A confirmation email will be sent</li>
+                          </ol>
+                        </>
+                      ) : (
+                        <p>Full payment not available after partial payment</p>
+                      )}
                     </div>
                     {status.hasFirstPayment && (
                       <p className="text-sm text-yellow-600 text-center">
@@ -326,14 +334,19 @@ export default function PaymentPage() {
                     {config.secondPayQrCode && (
                       <div className="flex justify-center">
                         <img 
-                          src={config.secondPayQrCode} 
+                          src={getQrCodeUrl(config.secondPayQrCode)} 
                           alt="Second Payment QR Code" 
                           className="w-48 h-48 object-contain border-2 border-orange-200 rounded-lg p-2"
                         />
                       </div>
                     )}
-                    <div className="text-center text-sm text-gray-600">
-                      Scan the QR code to complete remaining payment
+                    <div className="text-center text-sm text-gray-600 space-y-2">
+                      <p className="font-medium">How to pay:</p>
+                      <ol className="text-left space-y-1 max-w-xs mx-auto">
+                        <li>1. Scan the QR code with your banking app</li>
+                        <li>2. Complete the remaining payment</li>
+                        <li>3. A confirmation email will be sent</li>
+                      </ol>
                     </div>
                   </div>
                 </CardContent>
