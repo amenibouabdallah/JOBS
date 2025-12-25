@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Jobs } from "@/types/jobs.types";
+import { useState } from "react";
+import { Upload } from "lucide-react";
 
 interface Props {
   form: Partial<Jobs>;
@@ -19,6 +21,48 @@ const formatDateForInput = (date: Date | undefined) => {
 };
 
 export function CreateJobForm({ form, setForm, onSubmit, isEditing }: Props) {
+  const [qrPreviews, setQrPreviews] = useState<{
+    full?: string;
+    first?: string;
+    second?: string;
+  }>({});
+
+  const handleQrCodeUpload = async (file: File, type: 'full' | 'first' | 'second') => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Upload failed');
+
+      const data = await response.json();
+      const imageUrl = data.url || data.path;
+
+      // Update form with the QR code URL
+      if (type === 'full') {
+        setForm({ ...form, fullPayQrCode: imageUrl });
+      } else if (type === 'first') {
+        setForm({ ...form, firstPayQrCode: imageUrl });
+      } else if (type === 'second') {
+        setForm({ ...form, secondPayQrCode: imageUrl });
+      }
+
+      // Set preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setQrPreviews(prev => ({ ...prev, [type]: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('QR code upload failed:', error);
+    }
+  };
+
   return (
     <Card>
       <CardHeader><CardTitle>{isEditing ? 'Edit' : 'Create'} Jobs</CardTitle></CardHeader>
@@ -62,6 +106,57 @@ export function CreateJobForm({ form, setForm, onSubmit, isEditing }: Props) {
         <div>
           <label className="text-sm font-medium">Second Payment Amount</label>
           <Input type="number" placeholder="Second Payment Amount" value={form.secondPayAmount || 0} onChange={(e) => setForm({ ...form, secondPayAmount: Number(e.target.value) })} />
+        </div>
+        <div>
+          <label className="text-sm font-medium">Full Payment QR Code</label>
+          <div className="flex flex-col gap-2">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => e.target.files?.[0] && handleQrCodeUpload(e.target.files[0], 'full')} 
+            />
+            {(qrPreviews.full || form.fullPayQrCode) && (
+              <img 
+                src={qrPreviews.full || form.fullPayQrCode} 
+                alt="Full Payment QR" 
+                className="w-20 h-20 object-contain border rounded" 
+              />
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium">First Payment QR Code</label>
+          <div className="flex flex-col gap-2">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => e.target.files?.[0] && handleQrCodeUpload(e.target.files[0], 'first')} 
+            />
+            {(qrPreviews.first || form.firstPayQrCode) && (
+              <img 
+                src={qrPreviews.first || form.firstPayQrCode} 
+                alt="First Payment QR" 
+                className="w-20 h-20 object-contain border rounded" 
+              />
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium">Second Payment QR Code</label>
+          <div className="flex flex-col gap-2">
+            <Input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => e.target.files?.[0] && handleQrCodeUpload(e.target.files[0], 'second')} 
+            />
+            {(qrPreviews.second || form.secondPayQrCode) && (
+              <img 
+                src={qrPreviews.second || form.secondPayQrCode} 
+                alt="Second Payment QR" 
+                className="w-20 h-20 object-contain border rounded" 
+              />
+            )}
+          </div>
         </div>
         <div>
           <label className="text-sm font-medium">Number of Participants</label>

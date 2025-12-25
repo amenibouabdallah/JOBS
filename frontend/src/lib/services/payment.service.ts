@@ -8,6 +8,9 @@ interface PaymentConfig {
   payStart: string;
   payDeadline: string;
   firstPayDeadline: string;
+  fullPayQrCode?: string;
+  firstPayQrCode?: string;
+  secondPayQrCode?: string;
 }
 
 interface PaymentStatus {

@@ -10,6 +10,9 @@ export interface Jobs {
   PayAmount?: number;
   firstPayAmount?: number;
   secondPayAmount?: number;
+  fullPayQrCode?: string;
+  firstPayQrCode?: string;
+  secondPayQrCode?: string;
   nbrParticipants: number;
   isActive: boolean;
   hotelId?: number;

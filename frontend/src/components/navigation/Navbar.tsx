@@ -14,7 +14,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="absolute top-0 left-0 z-10 bg-white dark:bg-black h-16 md:h-20 flex flex-row justify-between items-center px-8 md:px-12 w-full shadow-sm">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 bg-white dark:bg-black h-16 md:h-20 flex flex-row justify-between items-center px-8 md:px-12 w-[95%] md:w-[90%] shadow-lg rounded-full">
       <Link
         href="/"
         className="w-fit h-fit hover:text-foreground text-foreground font-bold text-xl flex justify-center items-center"

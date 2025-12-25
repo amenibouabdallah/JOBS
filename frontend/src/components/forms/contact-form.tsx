@@ -1,16 +1,43 @@
       'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { apiClient } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface ContactFormProps {}
 
 export default function ContactForm({}: ContactFormProps) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log('Form submitted');
+    setIsSubmitting(true);
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+      subject: formData.get('subject') as string,
+      message: formData.get('message') as string,
+    };
+
+    try {
+      await apiClient.post('/mail/contact', data);
+      toast.success('Message envoyé avec succès!', {
+        description: 'Nous vous répondrons dans les plus brefs délais.',
+      });
+      e.currentTarget.reset();
+    } catch (error: any) {
+      console.error('Error sending contact email:', error);
+      toast.error('Erreur lors de l\'envoi du message', {
+        description: error.response?.data?.message || 'Veuillez réessayer plus tard.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -139,9 +166,10 @@ export default function ContactForm({}: ContactFormProps) {
               <div className="text-center">
                 <Button
                   type="submit"
-                  className="bg-primary hover:bg-primary/80 px-8 py-3 text-primary-foreground"
+                  disabled={isSubmitting}
+                  className="bg-primary hover:bg-primary/80 px-8 py-3 text-primary-foreground disabled:opacity-50"
                 >
-                  Envoyer le message
+                  {isSubmitting ? 'Envoi en cours...' : 'Envoyer le message'}
                 </Button>
               </div>
             </form>

@@ -17,6 +17,9 @@ interface PaymentConfig {
   payStart: string;
   payDeadline: string;
   firstPayDeadline: string;
+  fullPayQrCode?: string;
+  firstPayQrCode?: string;
+  secondPayQrCode?: string;
 }
 
 interface PaymentStatus {
@@ -234,19 +237,18 @@ export default function PaymentPage() {
                         + {config.secondPayAmount} DT later
                       </p>
                     </div>
-                    <Button
-                      onClick={() => initiatePayment('FIRST', config.firstPayAmount)}
-                      disabled={!status.canPayFirst || !isPaymentPeriodActive() || !isFirstPaymentDeadlineActive() || paymentLoading}
-                      className="w-full"
-                      variant={status.canPayFirst ? "default" : "secondary"}
-                    >
-                      {paymentLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <CreditCard className="h-4 w-4 mr-2" />
-                      )}
-                      Pay First Installment
-                    </Button>
+                    {config.firstPayQrCode && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={config.firstPayQrCode} 
+                          alt="First Payment QR Code" 
+                          className="w-48 h-48 object-contain border-2 border-blue-200 rounded-lg p-2"
+                        />
+                      </div>
+                    )}
+                    <div className="text-center text-sm text-gray-600">
+                      Scan the QR code to complete first payment
+                    </div>
                     {!status.canPayFirst && status.hasFirstPayment && (
                       <p className="text-sm text-green-600 text-center">
                         ✓ First payment completed
@@ -277,19 +279,18 @@ export default function PaymentPage() {
                         Complete registration
                       </p>
                     </div>
-                    <Button
-                      onClick={() => initiatePayment('FULL', config.fullPayAmount)}
-                      disabled={status.hasFirstPayment || !isPaymentPeriodActive() || paymentLoading}
-                      className="w-full"
-                      variant={!status.hasFirstPayment ? "default" : "secondary"}
-                    >
-                      {paymentLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <Receipt className="h-4 w-4 mr-2" />
-                      )}
-                      Pay Full Amount
-                    </Button>
+                    {config.fullPayQrCode && !status.hasFirstPayment && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={config.fullPayQrCode} 
+                          alt="Full Payment QR Code" 
+                          className="w-48 h-48 object-contain border-2 border-green-200 rounded-lg p-2"
+                        />
+                      </div>
+                    )}
+                    <div className="text-center text-sm text-gray-600">
+                      {!status.hasFirstPayment ? 'Scan the QR code to complete full payment' : 'Full payment not available after partial payment'}
+                    </div>
                     {status.hasFirstPayment && (
                       <p className="text-sm text-yellow-600 text-center">
                         Cannot pay full amount after partial payment
@@ -322,18 +323,18 @@ export default function PaymentPage() {
                         Remaining amount
                       </p>
                     </div>
-                    <Button
-                      onClick={() => initiatePayment('FULL', config.secondPayAmount)}
-                      disabled={!isPaymentPeriodActive() || paymentLoading}
-                      className="w-full"
-                    >
-                      {paymentLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <CreditCard className="h-4 w-4 mr-2" />
-                      )}
-                      Complete Payment
-                    </Button>
+                    {config.secondPayQrCode && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={config.secondPayQrCode} 
+                          alt="Second Payment QR Code" 
+                          className="w-48 h-48 object-contain border-2 border-orange-200 rounded-lg p-2"
+                        />
+                      </div>
+                    )}
+                    <div className="text-center text-sm text-gray-600">
+                      Scan the QR code to complete remaining payment
+                    </div>
                   </div>
                 </CardContent>
               </Card>

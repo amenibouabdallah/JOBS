@@ -47,6 +47,10 @@
         <div class="content">
             <p><strong>De :</strong> {{name}} ({{email}})</p>
             
+            {{#if phone}}
+            <p><strong>Téléphone :</strong> {{phone}}</p>
+            {{/if}}
+            
             {{#if subject}}
             <p><strong>Sujet :</strong> {{subject}}</p>
             {{/if}}

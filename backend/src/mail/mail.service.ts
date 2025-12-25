@@ -199,22 +199,28 @@ export class MailService {
     email: string;
     subject?: string;
     message: string;
+    phone?: string;
     userRole?: string;
     organization?: string;
   }) {
-
-    console.log('Sending contact email with data:', contactData);
-    // const adminEmail = this.configService.get('ADMIN_EMAIL') || 'admin@jobs2026.com';
-    
-    const adminEmail = 'belgacemyassin46@gmail.com';
-    await this.mailerService.sendMail({
-      to: adminEmail,
-      subject: contactData.subject || 'Nouveau message de contact - JOBS 2026',
-      template: './contact',
-      context: {
-        ...contactData,
-      },
-    });
+    try {
+      console.log('Sending contact email with data:', contactData);
+      const adminEmail = this.configService.get('ADMIN_EMAIL') || 'belgacemyassin46@gmail.com';
+      
+      await this.mailerService.sendMail({
+        to: adminEmail,
+        subject: contactData.subject || 'Nouveau message de contact - JOBS 2026',
+        template: './contact',
+        context: {
+          ...contactData,
+        },
+      });
+      
+      console.log('Contact email sent successfully to:', adminEmail);
+    } catch (error) {
+      console.error('Error sending contact email:', error);
+      throw new Error(`Failed to send contact email: ${error.message}`);
+    }
   }
 
   async sendGenericEmail(to: string, subject: string, text: string, html: string) {
